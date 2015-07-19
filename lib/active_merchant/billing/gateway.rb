@@ -146,7 +146,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def self.non_fractional_currency?(currency)
-        CURRENCIES_WITHOUT_FRACTIONS.include?(currency.to_s)
+        CURRENCIES_WITHOUT_FRACTIONS.include?(currency.to_s.upcase)
       end
 
       def self.supported_countries=(country_codes)
@@ -257,7 +257,7 @@ module ActiveMerchant #:nodoc:
       def localized_amount(money, currency)
         amount = amount(money)
 
-        return amount unless Gateway.non_fractional_currency?(currency)
+        return amount if Gateway.non_fractional_currency?(currency)
 
         if self.money_format == :cents
           sprintf("%.0f", amount.to_f / 100)
