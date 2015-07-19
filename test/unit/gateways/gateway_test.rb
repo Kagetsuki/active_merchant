@@ -74,22 +74,20 @@ class GatewayTest < Test::Unit::TestCase
     Gateway.money_format = :dollars
     assert_equal '1.00', @gateway.send(:localized_amount, 100, 'CAD')
     assert_equal '12.34', @gateway.send(:localized_amount, 1234, 'USD')
-    assert_equal '6789', @gateway.send(:localized_amount, 6789, 'JPY')
 
     Gateway.money_format = :cents
     assert_equal '100', @gateway.send(:localized_amount, 100, 'CAD')
     assert_equal '1234', @gateway.send(:localized_amount, 1234, 'USD')
-    assert_equal '6789', @gateway.send(:localized_amount, 6789, 'JPY')
   end
 
   def test_localized_amount_should_ignore_money_format_for_non_fractional_currencies
     Gateway.money_format = :dollars
     assert_equal '100', @gateway.send(:localized_amount, 100, 'JPY')
-    assert_equal '12.34', @gateway.send(:localized_amount, 1234, 'USD')
+    assert_equal '1234', @gateway.send(:localized_amount, 1234, 'HUF')
 
     Gateway.money_format = :cents
     assert_equal '100', @gateway.send(:localized_amount, 100, 'JPY')
-    assert_equal '1234', @gateway.send(:localized_amount, 1234, 'USD')
+    assert_equal '1234', @gateway.send(:localized_amount, 1234, 'HUF')
   end
 
   def test_non_fractional_currencies_accessor
