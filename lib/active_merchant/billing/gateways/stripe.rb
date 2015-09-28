@@ -63,7 +63,11 @@ module ActiveMerchant #:nodoc:
           end
           r.process do
             post = create_post_for_auth_or_purchase(money, payment, options)
-            post[:capture] = "false" unless emv_payment?(payment)
+            if emv_payment?(payment)
+              add_application_fee(post, options)
+            else
+              post[:capture] = "false"
+            end
             commit(:post, 'charges', post, options)
           end
         end.responses.last
@@ -92,12 +96,11 @@ module ActiveMerchant #:nodoc:
       def capture(money, authorization, options = {})
         post = {}
 
-        add_application_fee(post, options)
-
         if emv_tc_response = options.delete(:icc_data)
           post[:card] = { emv_approval_data: emv_tc_response }
           commit(:post, "charges/#{CGI.escape(authorization)}", post, options)
         else
+          add_application_fee(post, options)
           add_amount(post, money, options)
           commit(:post, "charges/#{CGI.escape(authorization)}/capture", post, options)
         end
@@ -159,6 +162,7 @@ module ActiveMerchant #:nodoc:
           add_creditcard(card_params, payment, options)
         end
 
+        post[:validate] = options[:validate] unless options[:validate].nil?
         post[:description] = options[:description] if options[:description]
         post[:email] = options[:email] if options[:email]
 
@@ -250,6 +254,7 @@ module ActiveMerchant #:nodoc:
           add_metadata(post, options)
           post[:description] = options[:description]
           post[:statement_descriptor] = options[:statement_description]
+          post[:receipt_email] = options[:receipt_email] if options[:receipt_email]
           add_customer(post, payment, options)
           add_flags(post, options)
         end
@@ -383,7 +388,7 @@ module ActiveMerchant #:nodoc:
         return nil unless params
 
         params.map do |key, value|
-          next if value.blank?
+          next if value != false && value.blank?
           if value.is_a?(Hash)
             h = {}
             value.each do |k, v|
@@ -460,6 +465,8 @@ module ActiveMerchant #:nodoc:
           [response["id"], response["sources"]["data"].first["id"]].join("|")
         elsif method == :post && url.match(/customers\/.*\/cards/)
           [response["customer"], response["id"]].join("|")
+        elsif url.include?("refund") && response["refunds"]
+          response["refunds"]["data"].first["id"]
         else
           response["id"]
         end

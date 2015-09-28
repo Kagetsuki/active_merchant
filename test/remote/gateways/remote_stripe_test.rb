@@ -31,6 +31,18 @@ class RemoteStripeTest < Test::Unit::TestCase
     assert response = @gateway.purchase(@amount, @credit_card, @options)
     assert_success response
     assert_equal "charge", response.params["object"]
+    assert_equal response.authorization, response.params["id"]
+    assert response.params["paid"]
+    assert_equal "ActiveMerchant Test Purchase", response.params["description"]
+    assert_equal "wow@example.com", response.params["metadata"]["email"]
+  end
+
+  def test_successful_purchase_with_blank_referer
+    options = @options.merge({referrer: ""})
+    assert response = @gateway.purchase(@amount, @credit_card, options)
+    assert_success response
+    assert_equal "charge", response.params["object"]
+    assert_equal response.authorization, response.params["id"]
     assert response.params["paid"]
     assert_equal "ActiveMerchant Test Purchase", response.params["description"]
     assert_equal "wow@example.com", response.params["metadata"]["email"]
@@ -93,6 +105,8 @@ class RemoteStripeTest < Test::Unit::TestCase
     assert_success response
     assert response.authorization
     assert refund = @gateway.refund(@amount - 20, response.authorization)
+    refund_id = refund.params["refunds"]["data"].first["id"]
+    assert_equal refund.authorization, refund_id
     assert_success refund
   end
 
@@ -138,6 +152,12 @@ class RemoteStripeTest < Test::Unit::TestCase
     first_card = response.params["sources"]["data"].first
     assert_equal response.params["default_source"], first_card["id"]
     assert_equal @credit_card.last_digits, first_card["last4"]
+  end
+
+  def test_successful_store_with_validate_false
+    assert response = @gateway.store(@credit_card, validate: false)
+    assert_success response
+    assert_equal "customer", response.params["object"]
   end
 
   def test_successful_store_with_existing_customer

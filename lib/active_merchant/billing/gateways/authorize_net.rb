@@ -6,7 +6,7 @@ module ActiveMerchant #:nodoc:
       include Empty
 
       self.test_url = 'https://apitest.authorize.net/xml/v1/request.api'
-      self.live_url = 'https://api.authorize.net/xml/v1/request.api'
+      self.live_url = 'https://api2.authorize.net/xml/v1/request.api'
 
       self.supported_countries = %w(AD AT AU BE BG CA CH CY CZ DE DK ES FI FR GB GB GI GR HU IE IT LI LU MC MT NL NO PL PT RO SE SI SK SM TR US VA)
       self.default_currency = 'USD'
@@ -180,11 +180,14 @@ module ActiveMerchant #:nodoc:
 
       def scrub(transcript)
         transcript.
+          gsub(%r((Authorization: Basic )\w+), '\1[FILTERED]').
           gsub(%r((<transactionKey>).+(</transactionKey>)), '\1[FILTERED]\2').
           gsub(%r((<cardNumber>).+(</cardNumber>)), '\1[FILTERED]\2').
           gsub(%r((<cardCode>).+(</cardCode>)), '\1[FILTERED]\2').
           gsub(%r((<track1>).+(</track1>)), '\1[FILTERED]\2').
           gsub(%r((<track2>).+(</track2>)), '\1[FILTERED]\2').
+          gsub(/(<routingNumber>).+(<\/routingNumber>)/, '\1[FILTERED]\2').
+          gsub(/(<accountNumber>).+(<\/accountNumber>)/, '\1[FILTERED]\2').
           gsub(%r((<cryptogram>).+(</cryptogram>)), '\1[FILTERED]\2')
       end
 
